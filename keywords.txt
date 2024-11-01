@@ -1,4 +1,8 @@
 CheerLights	    KEYWORD1
-getColorName	KEYWORD2
-getColorHex	    KEYWORD2
+getCurrentColor	KEYWORD2
+showColorName	KEYWORD2
+showColorHex	KEYWORD2
+showRed	        KEYWORD2
+showGreen	    KEYWORD2
+showBlue	    KEYWORD2
 begin	        KEYWORD2
