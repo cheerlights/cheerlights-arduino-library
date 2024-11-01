@@ -1,0 +1,4 @@
+CheerLights	    KEYWORD1
+getColorName	KEYWORD2
+getColorHex	    KEYWORD2
+begin	        KEYWORD2
