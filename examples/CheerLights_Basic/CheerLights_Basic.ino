@@ -61,8 +61,8 @@ void loop() {
         Serial.println(CheerLights.currentColorName());
 
         // Print the current CheerLights color as a hex value
-        Serial.print("Current CheerLights Color Hex: ");
-        Serial.println(CheerLights.currentColorHex());
+        Serial.print("Current CheerLights Color Hex: 0x");
+        Serial.println(CheerLights.currentColorHex(), HEX);
 
         // Print the current CheerLights color as RGB values
         Serial.print("Current CheerLights Color RGB: ");

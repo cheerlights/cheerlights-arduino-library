@@ -51,16 +51,18 @@ void CheerLights::_fetchColor() {
   lastUpdate = currentTime;
 
   // Check WiFi connection and attempt to reconnect if necessary
-  if (WiFi.status() != WL_CONNECTED) {
-    _connectToWiFi();
+  if (_ssid != nullptr && _password != nullptr) {
     if (WiFi.status() != WL_CONNECTED) {
-      return;
+      _connectToWiFi();
+      if (WiFi.status() != WL_CONNECTED) {
+        return;
+      }
     }
   }
 
   const char* host = "api.thingspeak.com";
   const int httpPort = 80;
-  const char* apiPath = "/channels/1417/field/1/last.txt";
+  const char* apiPath = "/channels/1417/field/1/last.txt?headers=false";
 
   WiFiClient client;
   if (!client.connect(host, httpPort)) {
@@ -138,11 +140,13 @@ void CheerLights::_fetchColor() {
   _colorHex = 0x000000; // Default to black
   for (const auto& color : colorMap) {
     if (strcasecmp(_colorName, color.name) == 0) {
-      _colorHex = color.color;
-      _previousColorHex = _colorHex;
+      _colorHex = color.color;      
       break;
     }
   }
+
+  _colorChanged = _colorHex != _previousColorHex;
+  _previousColorHex = _colorHex;
 }
 
 const char* CheerLights::getCurrentColor() {
@@ -175,5 +179,5 @@ bool CheerLights::isConnected() {
 }
 
 bool CheerLights::hasColorChanged() {
-  return _colorHex != _previousColorHex;
+  return _colorChanged;
 }

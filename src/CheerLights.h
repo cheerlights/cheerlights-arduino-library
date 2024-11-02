@@ -51,6 +51,7 @@ class CheerLights {
     char _colorName[32];
     uint32_t _colorHex;
     uint32_t _previousColorHex;
+    bool _colorChanged;
 };
 
 #endif // CHEERLIGHTS_H
