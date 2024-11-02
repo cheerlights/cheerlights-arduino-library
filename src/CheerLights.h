@@ -4,6 +4,10 @@
 #include <Arduino.h>
 #include <WiFiClient.h>
 
+#define MIN_UPDATE_INTERVAL 5000
+#define TIMEOUT             5000
+#define BUFFER_SIZE         128
+
 // Include the correct WiFi library based on the board
 #if defined(ESP8266)
   #include <ESP8266WiFi.h>
@@ -29,13 +33,16 @@ class CheerLights {
   public:
     CheerLights();
     void begin(const char* ssid, const char* password);
+    void begin();
+    bool reconnect();
     const char* getCurrentColor();
     const char* currentColorName();
     uint32_t currentColorHex();
     uint8_t currentRed();
     uint8_t currentGreen();
     uint8_t currentBlue();
-
+    bool isConnected();
+    bool hasColorChanged();
   private:
     void _connectToWiFi();
     void _fetchColor();
@@ -43,6 +50,7 @@ class CheerLights {
     const char* _password;
     char _colorName[32];
     uint32_t _colorHex;
+    uint32_t _previousColorHex;
 };
 
 #endif // CHEERLIGHTS_H

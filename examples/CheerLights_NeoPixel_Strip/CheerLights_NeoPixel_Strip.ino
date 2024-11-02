@@ -1,7 +1,7 @@
 /*
-'CheerLightsExample' demonstrates how to use the CheerLights Arduino library to fetch and display the current CheerLights color on an Adafruit NeoPixel LED strip.
+'CheerLights_NeoPixel_Strip' example demonstrates how to use the CheerLights Arduino library to fetch and display the current CheerLights color on an Adafruit NeoPixel LED strip.
 
-To learn more about CheerLights, visit https://cheerlights.com.
+To join the CheerLights community, visit https://cheerlights.com.
 */
 
 // Include the Adafruit NeoPixel library and initialize the strip
@@ -44,14 +44,20 @@ unsigned long previousMillis = 0;
 const long updateInterval = 15000;
 
 void setup() {
-    Serial.begin(115200);
+    // Initialize serial communication
+    Serial.begin(115200); 
+
+    // Initialize the CheerLights library
     CheerLights.begin(SECRET_SSID, SECRET_PASSWORD);
+
+    // Initialize the NeoPixel strip
     strip.begin();
 
     // Get the current CheerLights color and set the LEDs to that color
     CheerLights.getCurrentColor();
     Serial.print("Current CheerLights Color: ");
     Serial.println(CheerLights.currentColorName());
+    Serial.println("--------------------------------");
     setLEDColors(CheerLights.currentRed(), CheerLights.currentGreen(), CheerLights.currentBlue());
 }
 
@@ -66,6 +72,7 @@ void loop() {
         CheerLights.getCurrentColor();
         Serial.print("Current CheerLights Color: ");
         Serial.println(CheerLights.currentColorName());
+        Serial.println("--------------------------------");
         setLEDColors(CheerLights.currentRed(), CheerLights.currentGreen(), CheerLights.currentBlue());
     }
 }

@@ -1,18 +1,13 @@
 #include "CheerLights.h"
 
-#define MIN_UPDATE_INTERVAL 5000
-#define TIMEOUT             5000
-#define BUFFER_SIZE         128
-
 CheerLights::CheerLights() {
     strncpy(_colorName, "black", sizeof(_colorName) - 1);
     _colorName[sizeof(_colorName) - 1] = '\0';
     _colorHex = 0x000000;
+    _previousColorHex = 0x000000;
 }
 
 void CheerLights::begin(const char* ssid, const char* password) {
-  Serial.begin(115200);
-
   // Store WiFi credentials
   _ssid = ssid;
   _password = password;
@@ -21,16 +16,29 @@ void CheerLights::begin(const char* ssid, const char* password) {
   _connectToWiFi();
 }
 
+void CheerLights::begin() {
+  _ssid = nullptr;
+  _password = nullptr;
+}
+
+bool CheerLights::reconnect() {
+  if (WiFi.status() == WL_CONNECTED) {
+    return true;
+  }
+  
+  _connectToWiFi();
+  return WiFi.status() == WL_CONNECTED;
+}
+
 void CheerLights::_connectToWiFi() {
-  Serial.print("Connecting to WiFi");
+  if (_ssid == nullptr || _password == nullptr) {
+    return;
+  }
 
   WiFi.begin(_ssid, _password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    Serial.print(".");
   }
-
-  Serial.println("\nConnected to WiFi");
 }
 
 void CheerLights::_fetchColor() {
@@ -38,17 +46,14 @@ void CheerLights::_fetchColor() {
   unsigned long currentTime = millis();
 
   if (currentTime - lastUpdate < MIN_UPDATE_INTERVAL) {
-    Serial.println("Update interval not reached, skipping request.");
     return;
   }
   lastUpdate = currentTime;
 
   // Check WiFi connection and attempt to reconnect if necessary
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println(F("WiFi not connected, attempting to reconnect..."));
     _connectToWiFi();
     if (WiFi.status() != WL_CONNECTED) {
-      Serial.println(F("Failed to reconnect to WiFi."));
       return;
     }
   }
@@ -59,7 +64,6 @@ void CheerLights::_fetchColor() {
 
   WiFiClient client;
   if (!client.connect(host, httpPort)) {
-    Serial.println(F("Connection to ThingSpeak failed"));
     client.stop();
     return;
   }
@@ -75,7 +79,6 @@ void CheerLights::_fetchColor() {
   unsigned long timeout = millis();
   while (client.connected() && !client.available()) {
     if (millis() - timeout > TIMEOUT) {
-      Serial.println(F(">>> Client Timeout!"));
       client.stop();
       return;
     }
@@ -136,6 +139,7 @@ void CheerLights::_fetchColor() {
   for (const auto& color : colorMap) {
     if (strcasecmp(_colorName, color.name) == 0) {
       _colorHex = color.color;
+      _previousColorHex = _colorHex;
       break;
     }
   }
@@ -164,4 +168,12 @@ uint8_t CheerLights::currentGreen() {
 
 uint8_t CheerLights::currentBlue() {
   return _colorHex & 0xFF;
+}
+
+bool CheerLights::isConnected() {
+  return WiFi.status() == WL_CONNECTED;
+}
+
+bool CheerLights::hasColorChanged() {
+  return _colorHex != _previousColorHex;
 }
