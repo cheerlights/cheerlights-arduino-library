@@ -21,7 +21,7 @@ Include the library in your sketch and initialize it with your WiFi credentials.
 ## Methods
 
 - `begin(const char* ssid, const char* password)`: Initialize the library with your WiFi credentials.
-- `getCurrentColor()`: Get the current CheerLights color from ThingSpeak.
-- `showColorName()`: Show the current CheerLights color name (e.g. "red").
-- `showColorHex()`: Show the current CheerLights color as a hex value (e.g. 0xFF0000).
-- `showRed()`, `showGreen()`, `showBlue()`: Show the RGB values for the current CheerLights color (e.g. 255, 0, 0).
+- `getCurrentColor()`: Get the current CheerLights color from ThingSpeak channel 1417.
+- `currentColorName()`: The current CheerLights color name (e.g. "red").
+- `currentColorHex()`: The current CheerLights color as a hex value (e.g. 0xFF0000).
+- `currentRed()`, `currentGreen()`, `currentBlue()`: The RGB values for the current CheerLights color (e.g. 255, 0, 0).

@@ -1,6 +1,7 @@
 #include "CheerLights.h"
 
 #define MIN_UPDATE_INTERVAL 5000
+#define TIMEOUT             5000
 
 CheerLights::CheerLights() {
   _colorName = "black";
@@ -83,7 +84,7 @@ void CheerLights::_fetchColor() {
   // Wait for response
   unsigned long timeout = millis();
   while (client.connected() && !client.available()) {
-    if (millis() - timeout > 5000) { // 5 seconds timeout
+    if (millis() - timeout > TIMEOUT) {
       Serial.println(F(">>> Client Timeout!"));
       client.stop();
       return;
@@ -97,7 +98,6 @@ void CheerLights::_fetchColor() {
     line.trim();
 
     if (!headersEnd) {
-      // Check for end of headers
       if (line.length() == 0) {
         headersEnd = true;
       }
@@ -155,22 +155,22 @@ String CheerLights::getCurrentColor() {
   return _colorName;
 }
 
-String CheerLights::showColorName() {
+String CheerLights::currentColorName() {
   return _colorName;
 }
 
-uint32_t CheerLights::showColorHex() {
+uint32_t CheerLights::currentColorHex() {
   return _colorHex;
 }
 
-uint8_t CheerLights::showRed() {
+uint8_t CheerLights::currentRed() {
   return (_colorHex >> 16) & 0xFF;
 }
 
-uint8_t CheerLights::showGreen() {
+uint8_t CheerLights::currentGreen() {
   return (_colorHex >> 8) & 0xFF;
 }
 
-uint8_t CheerLights::showBlue() {
+uint8_t CheerLights::currentBlue() {
   return _colorHex & 0xFF;
 }

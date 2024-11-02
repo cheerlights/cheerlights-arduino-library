@@ -1,8 +1,8 @@
-CheerLights	    KEYWORD1
-getCurrentColor	KEYWORD2
-showColorName	KEYWORD2
-showColorHex	KEYWORD2
-showRed	        KEYWORD2
-showGreen	    KEYWORD2
-showBlue	    KEYWORD2
-begin	        KEYWORD2
+CheerLights		    KEYWORD1
+getCurrentColor		KEYWORD2
+currentColorName	KEYWORD2
+currentColorHex		KEYWORD2
+currentRed		    KEYWORD2
+currentGreen		KEYWORD2
+currentBlue		    KEYWORD2
+begin		        KEYWORD2
