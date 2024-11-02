@@ -41,7 +41,7 @@ class CheerLights {
     void _fetchColor();
     const char* _ssid;
     const char* _password;
-    const char* _colorName;
+    char _colorName[32];
     uint32_t _colorHex;
 };
 

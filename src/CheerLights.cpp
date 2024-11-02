@@ -5,8 +5,9 @@
 #define BUFFER_SIZE         128
 
 CheerLights::CheerLights() {
-  strcpy(_colorName, "black");
-  _colorHex = 0x000000;
+    strncpy(_colorName, "black", sizeof(_colorName) - 1);
+    _colorName[sizeof(_colorName) - 1] = '\0';
+    _colorHex = 0x000000;
 }
 
 void CheerLights::begin(const char* ssid, const char* password) {
