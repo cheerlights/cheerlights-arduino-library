@@ -2,9 +2,10 @@
 
 #define MIN_UPDATE_INTERVAL 5000
 #define TIMEOUT             5000
+#define BUFFER_SIZE         128
 
 CheerLights::CheerLights() {
-  _colorName = "black";
+  strcpy(_colorName, "black");
   _colorHex = 0x000000;
 }
 
@@ -22,25 +23,11 @@ void CheerLights::begin(const char* ssid, const char* password) {
 void CheerLights::_connectToWiFi() {
   Serial.print("Connecting to WiFi");
 
-  #if defined(ESP8266) || defined(ESP32) 
-    WiFi.begin(_ssid, _password);
-    while (WiFi.status() != WL_CONNECTED) {
-      delay(500);
-      Serial.print(".");
-    }
-  #elif defined(ARDUINO_SAMD_MKR1000) || defined(ARDUINO_SAMD_MKRWIFI1010) || defined(ARDUINO_AVR_UNO_WIFI_REV2) || defined(ARDUINO_ARCH_SAMD)
-    while (WiFi.begin(_ssid, _password) != WL_CONNECTED) {
-      delay(5000);
-      Serial.print(".");
-    }
-  #else
-    // Default WiFi connection method
-    WiFi.begin(_ssid, _password);
-    while (WiFi.status() != WL_CONNECTED) {
-      delay(500);
-      Serial.print(".");
-    }
-  #endif
+  WiFi.begin(_ssid, _password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
 
   Serial.println("\nConnected to WiFi");
 }
@@ -76,10 +63,12 @@ void CheerLights::_fetchColor() {
     return;
   }
 
-  // Create the HTTP GET request
-  client.print(String("GET ") + apiPath + " HTTP/1.1\r\n" +
-               "Host: " + host + "\r\n" + 
-               "Connection: close\r\n\r\n");
+  // Create the HTTP GET request without using String
+  client.print("GET ");
+  client.print(apiPath);
+  client.print(" HTTP/1.1\r\nHost: ");
+  client.print(host);
+  client.print("\r\nConnection: close\r\n\r\n");
 
   // Wait for response
   unsigned long timeout = millis();
@@ -93,32 +82,34 @@ void CheerLights::_fetchColor() {
 
   // Read the response
   bool headersEnd = false;
-  while (client.connected()) {
-    String line = client.readStringUntil('\n');
-    line.trim();
+  char line[BUFFER_SIZE];
+  while (client.connected() || client.available()) {
+    int len = client.readBytesUntil('\n', line, sizeof(line) - 1);
+    line[len] = 0;
+
+    char* start = line;
+    while (*start == ' ' || *start == '\r') start++;
+    char* end = line + strlen(line) - 1;
+    while (end > start && (*end == ' ' || *end == '\r')) *end-- = 0;
 
     if (!headersEnd) {
-      if (line.length() == 0) {
+      if (strlen(start) == 0) {
         headersEnd = true;
       }
       continue;
     }
 
-    if (line.length() > 0) {
-      _colorName = line;
+    if (strlen(start) > 0) {
+      strncpy(_colorName, start, sizeof(_colorName) - 1);
+      _colorName[sizeof(_colorName) - 1] = 0;
       break;
     }
   }
 
-  // Read any remaining data
-  while (client.available()) {
-    client.read();
-  }
-
   client.stop();
 
-  _colorName.trim();
-  _colorName.toLowerCase();
+  // Convert color name to lowercase
+  for (char* p = _colorName; *p; ++p) *p = tolower(*p);
 
   // Map the color name to a hex value
   static const struct {
@@ -142,20 +133,19 @@ void CheerLights::_fetchColor() {
 
   _colorHex = 0x000000; // Default to black
   for (const auto& color : colorMap) {
-    if (_colorName.equalsIgnoreCase(color.name)) {
+    if (strcasecmp(_colorName, color.name) == 0) {
       _colorHex = color.color;
       break;
     }
   }
-
 }
 
-String CheerLights::getCurrentColor() {
+const char* CheerLights::getCurrentColor() {
   _fetchColor();
   return _colorName;
 }
 
-String CheerLights::currentColorName() {
+const char* CheerLights::currentColorName() {
   return _colorName;
 }
 
