@@ -6,6 +6,7 @@ An Arduino library to synchronize with the global CheerLights color by fetching 
 
 - Fetch the latest CheerLights color name.
 - Retrieve RGB values for the current color.
+- Retrieve HSV values for the current color.
 - Easy integration with LED strips like NeoPixels.
 
 ## IDE Installation
@@ -28,6 +29,7 @@ Include the library in your sketch and initialize it with your WiFi credentials.
 - `currentColorName()`: The current CheerLights color name (e.g. "red"). Returns a pointer to a constant char array.
 - `currentColorHex()`: The current CheerLights color as a hex value (e.g. 0xFF0000). Returns a uint32_t.
 - `currentRed()`, `currentGreen()`, `currentBlue()`: The RGB values for the current CheerLights color (e.g. 255, 0, 0). Returns a uint8_t.
+- `currentHue()`, `currentSaturation()`, `currentValue()`: The HSV values for the current CheerLights color (e.g. 0, 255, 255). Returns a uint16_t for hue and uint8_t for saturation and value.
 - `hasColorChanged()`: Returns a boolean indicating whether the current CheerLights color has changed since the last call to this method.
 
 ## Compatibility

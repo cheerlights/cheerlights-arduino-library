@@ -72,6 +72,14 @@ void loop() {
         Serial.print(", ");
         Serial.println(CheerLights.currentBlue());
 
+        // Print the current CheerLights color as HSV values
+        Serial.print("Current CheerLights Color HSV: ");
+        Serial.print(CheerLights.currentHue());
+        Serial.print(", ");
+        Serial.print(CheerLights.currentSaturation());
+        Serial.print(", ");
+        Serial.println(CheerLights.currentValue());
+
         // Check if the color has changed
         if (CheerLights.hasColorChanged()) {
             Serial.println("Color has changed!");

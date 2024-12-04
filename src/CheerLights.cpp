@@ -5,6 +5,9 @@ CheerLights::CheerLights() {
     _colorName[sizeof(_colorName) - 1] = '\0';
     _colorHex = 0x000000;
     _previousColorHex = 0x000000;
+    _colorHue = 0;
+    _colorSaturation = 0;
+    _colorValue = 0;
 }
 
 void CheerLights::begin(const char* ssid, const char* password) {
@@ -145,6 +148,37 @@ void CheerLights::_fetchColor() {
     }
   }
 
+  // Map the color name to hue, saturation, and value
+  static const struct {
+    const char* name;
+    uint16_t hue;
+    uint8_t saturation;
+    uint8_t value;
+  } colorMapHSV[] = {
+    {"red", 0, 255, 255},
+    {"green", 21845, 255, 255},
+    {"blue", 43690, 255, 255},
+    {"cyan", 32767, 255, 255},
+    {"white", 0, 0, 255},
+    {"warmwhite", 7123, 23, 253},
+    {"oldlace", 7123, 23, 253},
+    {"magenta", 54612, 255, 255},
+    {"yellow", 10922, 255, 255},
+    {"orange", 6954, 255, 255},
+    {"purple", 54612, 255, 128},
+    {"pink", 63627, 63, 255},
+    {"black", 0, 0, 0}
+  };
+
+  for (const auto& colorHSV : colorMapHSV) {
+    if (strcasecmp(_colorName, colorHSV.name) == 0) {
+      _colorHue = colorHSV.hue;
+      _colorSaturation = colorHSV.saturation;
+      _colorValue = colorHSV.value;
+      break;
+    }
+  }
+
   _colorChanged = _colorHex != _previousColorHex;
   _previousColorHex = _colorHex;
 }
@@ -172,6 +206,18 @@ uint8_t CheerLights::currentGreen() {
 
 uint8_t CheerLights::currentBlue() {
   return _colorHex & 0xFF;
+}
+
+uint16_t CheerLights::currentHue() {
+  return _colorHue;
+}
+
+uint8_t CheerLights::currentSaturation() {
+  return _colorSaturation;
+}
+
+uint8_t CheerLights::currentValue() {
+  return _colorValue;
 }
 
 bool CheerLights::isConnected() {

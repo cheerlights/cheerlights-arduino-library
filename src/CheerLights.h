@@ -41,6 +41,9 @@ class CheerLights {
     uint8_t currentRed();
     uint8_t currentGreen();
     uint8_t currentBlue();
+    uint16_t currentHue();
+    uint8_t currentSaturation();
+    uint8_t currentValue();
     bool isConnected();
     bool hasColorChanged();
   private:
@@ -51,6 +54,9 @@ class CheerLights {
     char _colorName[32];
     uint32_t _colorHex;
     uint32_t _previousColorHex;
+    uint16_t _colorHue;
+    uint8_t _colorSaturation;
+    uint8_t _colorValue;
     bool _colorChanged;
 };
 
