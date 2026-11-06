@@ -5,7 +5,7 @@
 #include <WiFiClient.h>
 
 #define MIN_UPDATE_INTERVAL 5000
-#define TIMEOUT             5000
+#define TIMEOUT             10000
 #define BUFFER_SIZE         128
 
 // Include the correct WiFi library based on the board
@@ -58,6 +58,8 @@ class CheerLights {
     uint8_t _colorSaturation;
     uint8_t _colorValue;
     bool _colorChanged;
+    unsigned long _lastUpdate;
+    bool _hasFetched;
 };
 
 #endif // CHEERLIGHTS_H

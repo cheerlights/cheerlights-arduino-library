@@ -8,6 +8,9 @@ CheerLights::CheerLights() {
     _colorHue = 0;
     _colorSaturation = 0;
     _colorValue = 0;
+    _colorChanged = false;
+    _lastUpdate = 0;
+    _hasFetched = false;
 }
 
 void CheerLights::begin(const char* ssid, const char* password) {
@@ -45,13 +48,16 @@ void CheerLights::_connectToWiFi() {
 }
 
 void CheerLights::_fetchColor() {
-  static unsigned long lastUpdate = 0;
+  // hasColorChanged() reports on this call only, also when it skips or fails
+  _colorChanged = false;
   unsigned long currentTime = millis();
 
-  if (currentTime - lastUpdate < MIN_UPDATE_INTERVAL) {
+  // The first fetch always runs, even in the first seconds after boot
+  if (_hasFetched && currentTime - _lastUpdate < MIN_UPDATE_INTERVAL) {
     return;
   }
-  lastUpdate = currentTime;
+  _hasFetched = true;
+  _lastUpdate = currentTime;
 
   // Check WiFi connection and attempt to reconnect if necessary
   if (_ssid != nullptr && _password != nullptr) {
@@ -73,49 +79,96 @@ void CheerLights::_fetchColor() {
     return;
   }
 
-  // Create the HTTP GET request without using String
-  client.print("GET ");
-  client.print(apiPath);
-  client.print(" HTTP/1.1\r\nHost: ");
-  client.print(host);
-  client.print("\r\nConnection: close\r\n\r\n");
-
-  // Wait for response
-  unsigned long timeout = millis();
-  while (client.connected() && !client.available()) {
-    if (millis() - timeout > TIMEOUT) {
-      client.stop();
-      return;
-    }
+  // Send the whole HTTP GET request in one write, without using String.
+  // Separate print() calls go out as separate TCP segments, and every extra
+  // segment is another chance to hit a lost packet and a retransmit (issue #2).
+  char request[192];
+  int requestLength = snprintf(request, sizeof(request),
+                               "GET %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n",
+                               apiPath, host);
+  if (requestLength <= 0 || requestLength >= (int)sizeof(request) ||
+      client.write((const uint8_t*)request, requestLength) != (size_t)requestLength) {
+    client.stop();
+    return;
   }
 
-  // Read the response
-  bool headersEnd = false;
+  // Read the response a byte at a time as it arrives, within one deadline.
+  // Stream timed reads are not used: the body has no trailing newline, so a
+  // line read would wait out the stream timeout on every fetch.
   char line[BUFFER_SIZE];
-  while (client.connected() || client.available()) {
-    int len = client.readBytesUntil('\n', line, sizeof(line) - 1);
-    line[len] = 0;
+  size_t lineLength = 0;
+  bool statusLine = true;
+  bool statusOk = false;
+  bool inBody = false;
+  long contentLength = -1;
+  long bodyRead = 0;
+  bool bodyDone = false;
+  unsigned long started = millis();
 
-    char* start = line;
-    while (*start == ' ' || *start == '\r') start++;
-    char* end = line + strlen(line) - 1;
-    while (end > start && (*end == ' ' || *end == '\r')) *end-- = 0;
+  while (!bodyDone && millis() - started < TIMEOUT) {
+    int c = client.read();
+    if (c < 0) {
+      if (!client.connected()) {
+        bodyDone = inBody;  // the server closed the connection after the body
+        break;
+      }
+      delay(1);
+      continue;
+    }
 
-    if (!headersEnd) {
-      if (strlen(start) == 0) {
-        headersEnd = true;
+    if (inBody) {
+      bodyRead++;
+      if (c == '\n') {
+        bodyDone = true;
+      } else if (lineLength < sizeof(line) - 1) {
+        line[lineLength++] = (char)c;
+      }
+      if (contentLength >= 0 && bodyRead >= contentLength) {
+        bodyDone = true;
       }
       continue;
     }
 
-    if (strlen(start) > 0) {
-      strncpy(_colorName, start, sizeof(_colorName) - 1);
-      _colorName[sizeof(_colorName) - 1] = 0;
-      break;
+    if (c != '\n') {
+      if (lineLength < sizeof(line) - 1) {
+        line[lineLength++] = (char)c;
+      }
+      continue;
     }
+
+    // End of a status or header line
+    if (lineLength > 0 && line[lineLength - 1] == '\r') lineLength--;
+    line[lineLength] = 0;
+    if (statusLine) {
+      statusOk = strncmp(line, "HTTP/1.", 7) == 0 && strncmp(line + 8, " 200", 4) == 0;
+      statusLine = false;
+    } else if (lineLength == 0) {
+      inBody = true;
+      if (contentLength == 0) bodyDone = true;
+    } else if (strncasecmp(line, "Content-Length:", 15) == 0) {
+      contentLength = atol(line + 15);
+    }
+    lineLength = 0;
   }
 
   client.stop();
+
+  if (!statusOk || !bodyDone) {
+    return;
+  }
+
+  // Trim spaces and carriage returns around the color name
+  line[lineLength] = 0;
+  char* start = line;
+  while (*start == ' ' || *start == '\r' || *start == '\t') start++;
+  char* end = start + strlen(start);
+  while (end > start && (end[-1] == ' ' || end[-1] == '\r' || end[-1] == '\t')) *--end = 0;
+  if (*start == 0) {
+    return;
+  }
+
+  strncpy(_colorName, start, sizeof(_colorName) - 1);
+  _colorName[sizeof(_colorName) - 1] = 0;
 
   // Convert color name to lowercase
   for (char* p = _colorName; *p; ++p) *p = tolower(*p);
